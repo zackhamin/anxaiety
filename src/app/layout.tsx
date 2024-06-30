@@ -21,7 +21,6 @@ export default async function RootLayout({
       <html lang="en">
         <body className={inter.className}>
           <header className="fixed top-0 right-0 m-4">
-            <text>About</text>
             <AuthButton />
           </header>
           <main>{children}</main>

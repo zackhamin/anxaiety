@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     });
 
     console.log("Anthropic API response:", response);
-
+    //@ts-ignore
     return NextResponse.json({ content: response.content[0].text });
   } catch (error) {
     console.error("Error in /api/chat:", error);
