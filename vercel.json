@@ -1,0 +1,13 @@
+{
+  "build": {
+    "env": {
+      "DATABASE_URL": "postgres://default:DRhT9jd6erWI@ep-broad-cell-a2ba1vgu-pooler.eu-central-1.aws.neon.tech:5432/verceldb?sslmode=require"
+    }
+  },
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
+    }
+  ]
+}
