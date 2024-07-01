@@ -17,7 +17,8 @@ interface Message {
 export default withPageAuthRequired(function Home() {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
-  const [isSessionLoadingLoading, setIsLoading] = useState(false);
+  const [isSessionLoading, setIsLoading] = useState(false);
+  const [previousChats, setPreviousChats] = useState<Message[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { user, error, isLoading } = useUser();
@@ -28,14 +29,64 @@ export default withPageAuthRequired(function Home() {
 
   useEffect(scrollToBottom, [messages]);
 
+  useEffect(() => {
+    if (user) {
+      fetchPreviousChats(user.sub);
+    }
+  }, [user]);
+
+  const fetchPreviousChats = async (userId: string) => {
+    try {
+      const response = await fetch(`/api/get-chats?userId=${userId}`);
+      const data = await response.json();
+      setPreviousChats(data.chats);
+    } catch (error) {
+      console.error("Error fetching previous chats:", error);
+    }
+  };
+
+  const saveMessage = async (content: string, isUser: boolean) => {
+    if (!user?.sub) {
+      console.error("User ID not available");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/save-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.sub,
+          content,
+          isUser,
+          email: user.email,
+          name: user.name,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log("Message saved:", result);
+    } catch (error) {
+      console.error("Error saving message:", error);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim()) return;
 
-    setMessages((prev) => [...prev, { content: message, isUser: true }]);
+    const userMessage = { content: message, isUser: true };
+    setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
 
     try {
+      // Save user message
+      await saveMessage(message, true);
+
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -45,66 +96,44 @@ export default withPageAuthRequired(function Home() {
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
 
       const data = await res.json();
-      setMessages((prev) => [
-        ...prev,
-        { content: data.content, isUser: false },
-      ]);
+      const aiMessage = { content: data.content, isUser: false };
+      setMessages((prev) => [...prev, aiMessage]);
+
+      // Save AI message
+      await saveMessage(data.content, false);
     } catch (error) {
       console.error("Error calling API:", error);
-      setMessages((prev) => [
-        ...prev,
-        {
-          content: "An error occurred while processing your request.",
-          isUser: false,
-        },
-      ]);
+      const errorMessage = {
+        content: "An error occurred while processing your request.",
+        isUser: false,
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+      await saveMessage(errorMessage.content, false);
     } finally {
       setIsLoading(false);
       setMessage("");
     }
   };
 
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-  console.log(user);
-  if (!user) {
-  }
+  if (isLoading) return <div>Loading...</div>;
 
   return (
     <main className="flex flex-col h-screen">
-      <div className="flex-grow overflow-auto p-4">
-        {messages.map((msg, index) => (
-          <div
-            key={index}
-            className={`mb-4 ${msg.isUser ? "text-right" : "text-left"}`}
-          >
-            <div
-              className={`inline-block p-2 rounded-lg ${
-                msg.isUser ? "bg-blue-500 text-white" : "bg-gray-200"
-              }`}
-            >
-              {msg.content}
-            </div>
-          </div>
-        ))}
-        <div ref={messagesEndRef} />
-      </div>
       <div className="p-4 bg-white">
         {user ? (
           <form
             onSubmit={handleSubmit}
-            className="flex justify-center items-center space-x-2 max-w-2xl mx-auto"
+            className="flex flex-col justify-center items-center space-y-2 max-w-2xl mx-auto"
           >
             <InputWithIcons
               type="text"
               placeholder="Enter your message"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              className="flex-grow"
+              className="w-full p-4 text-lg"
             />
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Sending..." : "Send"}
+            <Button type="submit" disabled={isSessionLoading}>
+              {isSessionLoading ? "Sending..." : "Send"}
             </Button>
           </form>
         ) : (
