@@ -118,12 +118,29 @@ export default withPageAuthRequired(function Home() {
   if (isLoading) return <div>Loading...</div>;
 
   return (
-    <main className="flex flex-col h-screen">
-      <div className="p-4 bg-white">
+    <main className="flex flex-col h-screen items-center justify-center">
+      <div className="flex-grow overflow-auto p-4 w-full max-w-2xl">
+        {messages.map((msg, index) => (
+          <div
+            key={index}
+            className={`mb-4 ${msg.isUser ? "text-right" : "text-left"}`}
+          >
+            <div
+              className={`inline-block p-2 rounded-lg ${
+                msg.isUser ? "bg-blue-500 text-white" : "bg-gray-200"
+              }`}
+            >
+              {msg.content}
+            </div>
+          </div>
+        ))}
+        <div ref={messagesEndRef} />
+      </div>
+      <div className="p-4 bg-white w-full max-w-2xl">
         {user ? (
           <form
             onSubmit={handleSubmit}
-            className="flex flex-col justify-center items-center space-y-2 max-w-2xl mx-auto"
+            className="flex flex-col justify-center items-center space-y-2 w-full"
           >
             <InputWithIcons
               type="text"
