@@ -31,7 +31,7 @@ export default withPageAuthRequired(function Home() {
 
   useEffect(() => {
     if (user) {
-      fetchPreviousChats(user.sub);
+      fetchPreviousChats(user.sub as string);
     }
   }, [user]);
 
