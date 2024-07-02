@@ -97,7 +97,6 @@ export default withPageAuthRequired(function Home() {
               }`}
             >
               {formatText(msg.content)}
-              {/* {msg.content} */}
             </div>
           </div>
         ))}
