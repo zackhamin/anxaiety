@@ -84,7 +84,7 @@ export default function Home() {
 
             <section className="text-center mb-16">
               <h3 className="text-2xl font-bold mb-8">
-                How Anxiaety Helps You
+                How Anxaiety Helps You
               </h3>
               <div className="grid md:grid-cols-4 gap-8">
                 <div>

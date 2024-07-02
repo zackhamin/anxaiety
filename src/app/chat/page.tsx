@@ -1,13 +1,15 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { InputWithIcons } from "@Components/CustomInput";
 import { useUser, withPageAuthRequired } from "@auth0/nextjs-auth0/client";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import saveMessageToDB from "../utils/saveMessageToDB";
+import { Textarea } from "@/components/ui/textarea";
+import { formatText } from "../utils/formatText";
 
 interface Message {
   content: string;
@@ -29,50 +31,14 @@ export default withPageAuthRequired(function Home() {
 
   useEffect(scrollToBottom, [messages]);
 
-  useEffect(() => {
-    if (user) {
-      fetchPreviousChats(user.sub as string);
-    }
-  }, [user]);
-
-  const fetchPreviousChats = async (userId: string) => {
-    try {
-      const response = await fetch(`/api/get-chats?userId=${userId}`);
-      const data = await response.json();
-      setPreviousChats(data.chats);
-    } catch (error) {
-      console.error("Error fetching previous chats:", error);
-    }
-  };
-
   const saveMessage = async (content: string, isUser: boolean) => {
     if (!user?.sub) {
       console.error("User ID not available");
       return;
     }
 
-    try {
-      const response = await fetch("/api/save-chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: user.sub,
-          content,
-          isUser,
-          email: user.email,
-          name: user.name,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-      console.log("Message saved:", result);
-    } catch (error) {
-      console.error("Error saving message:", error);
-    }
+    const messageSaved = saveMessageToDB(user, content, isUser);
+    console.log(messageSaved);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -119,7 +85,7 @@ export default withPageAuthRequired(function Home() {
 
   return (
     <main className="flex flex-col h-screen items-center justify-center">
-      <div className="flex-grow overflow-auto p-4 w-full max-w-2xl">
+      <div className="flex-grow overflow-auto p-4 w-full max-w-2xl border-2 mt-12">
         {messages.map((msg, index) => (
           <div
             key={index}
@@ -130,7 +96,8 @@ export default withPageAuthRequired(function Home() {
                 msg.isUser ? "bg-blue-500 text-white" : "bg-gray-200"
               }`}
             >
-              {msg.content}
+              {formatText(msg.content)}
+              {/* {msg.content} */}
             </div>
           </div>
         ))}
@@ -138,12 +105,8 @@ export default withPageAuthRequired(function Home() {
       </div>
       <div className="p-4 bg-white w-full max-w-2xl">
         {user ? (
-          <form
-            onSubmit={handleSubmit}
-            className="flex flex-col justify-center items-center space-y-2 w-full"
-          >
-            <InputWithIcons
-              type="text"
+          <form onSubmit={handleSubmit} className="grid w-full gap-2">
+            <Textarea
               placeholder="Enter your message"
               value={message}
               onChange={(e) => setMessage(e.target.value)}

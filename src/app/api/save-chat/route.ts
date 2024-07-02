@@ -16,8 +16,8 @@ export async function POST(request: Request) {
       user = await prisma.user.create({
         data: {
           id: userId,
-          email, // replace with actual user email
-          name, // replace with actual user name
+          email, 
+          name, 
         },
       });
     }
